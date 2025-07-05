@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { useAuth } from "@/Hooks/useAuth";
 
 function Login({ setIsLoggedIn }) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -8,6 +9,7 @@ function Login({ setIsLoggedIn }) {
         email: "",
         password: ""
     });
+    const { setUserId } = useAuth();
 
     const [errors, setErrors] = useState({
         email: false,
@@ -68,7 +70,7 @@ function Login({ setIsLoggedIn }) {
                     timer: 1500
                 });
                 setIsLoggedIn(true);
-                localStorage.setItem("isLoggedIn", "true");
+                setUserId(data.user.id);
                 navigate("/home");
             } else {
                 Swal.fire({
