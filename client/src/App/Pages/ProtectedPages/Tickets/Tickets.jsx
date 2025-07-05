@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import { Trash2, Edit2, Eye, MessageSquare } from "lucide-react";
+import { useAuth } from "@/Hooks/useAuth";
 
 function Tickets() {
+  const { userId } = useAuth();
   const [tickets, setTickets] = useState([]);
 
   useEffect(() => {
-    fetchTickets();
+    fetchTickets();    
   }, []);
 
   // Get all tickets for user
   const fetchTickets = async () => {
     try {
-      const res = await fetch("/api/tickets/get_tickets");      
+      const res = await fetch("/api/tickets/get_tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });      
 
       if (!res.ok) {
         let errMsg = "Could not load tickets.";
@@ -101,6 +107,7 @@ function Tickets() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            userId: userId,
             ticketId: ticket.id,
             text: newComment.trim()
           }),
@@ -136,7 +143,7 @@ function Tickets() {
       const res = await fetch("/api/tickets/delete_ticket", { 
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ userId: userId, ticketId: id }),
       });
 
       if (res.ok) {
@@ -180,7 +187,7 @@ function Tickets() {
       const res = await fetch("/api/tickets/edit_ticket", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: ticket.id, ...formValues }),
+        body: JSON.stringify({ userId: userId, id: ticket.id, ...formValues }),
       });
 
       if (res.ok) {
