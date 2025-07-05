@@ -6,12 +6,12 @@ const logger = require('../Utils/logger');
 // Create ticket
 router.post('/add_ticket', async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            logger.warn('[TICKET] Unauthorized ticket creation attempt');
+        if (!req.body.userId) {
+            logger.error('[TICKET] Unauthorized ticket creation attempt');
             return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
         }
 
-        const userId = req.user.id;
+        const userId = req.body.userId;
         const { title, description, status } = req.body;
 
         if (!title || typeof title !== 'string') {
@@ -32,14 +32,14 @@ router.post('/add_ticket', async (req, res) => {
 });
 
 // Get tickets
-router.get('/get_tickets', async (req, res) => {
+router.post('/get_tickets', async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            logger.warn('[TICKET] Unauthorized fetch attempt');
+        if (!req.body.userId) {
+            logger.error('[TICKET] Unauthorized fetch attempt');
             return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
         }
 
-        const userId = req.user.id;
+        const userId = req.body.userId;
         const tickets = await ticketService.getTicketsByUser(userId);
         return res.status(200).json(tickets);
 
@@ -52,13 +52,13 @@ router.get('/get_tickets', async (req, res) => {
 // Delete ticket
 router.delete('/delete_ticket', async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            logger.warn('[TICKET] Unauthorized delete attempt');
+        if (!req.body.userId) {
+            logger.error('[TICKET] Unauthorized delete attempt');
             return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
         }
 
-        const userId = req.user.id;
-        const { id } = req.body;
+        const userId = req.body.userId;
+        const id = req.body.ticketId;
 
         if (!id) {
             return res.status(400).json({ error: 'Bad Request: ticket id is required.' });
@@ -77,11 +77,11 @@ router.delete('/delete_ticket', async (req, res) => {
 // Edit ticket
 router.put('/edit_ticket', async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            logger.warn('[TICKET] Unauthorized update attempt');
+        if (!req.body.userId) {
+            logger.error('[TICKET] Unauthorized update attempt');
             return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
         }
-        const userId = req.user.id;
+        const userId = req.body.userId;
 
         const { id, title, description, status } = req.body;
         if (!id) {
@@ -128,11 +128,11 @@ router.put('/edit_ticket', async (req, res) => {
 // Add comment to ticket 
 router.post('/comments/add_comment', async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            logger.warn('[COMMENTS] Unauthorized add-comment attempt');
+        if (!req.body.userId) {
+            logger.error('[COMMENTS] Unauthorized add-comment attempt');
             return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
         }
-        const userId = req.user.id;
+        const userId = req.body.userId;
 
         const { ticketId, text } = req.body;
         if (!ticketId) {
