@@ -24,23 +24,38 @@ exports.registerUser = async ({ name, email, password }) => {
 
 // Login
 exports.loginUser = async ({ email, password }) => {
-  if (!email || !password) throw new Error("Email and password are required.");
+  if (!email || !password) {
+    throw new Error("Email and password are required.");
+  }
 
   const client = await connect();
-  const result = await client.query("SELECT * FROM users WHERE email = $1", [email]);
-  client.release();
+  try {
+    const result = await client.query(
+      "SELECT id, email, password FROM users WHERE email = $1",
+      [email]
+    );
 
-  if (result.rows.length === 0) {
-    throw new Error("Invalid email or password.");
+    if (result.rows.length === 0) {
+      throw new Error("Invalid email or password.");
+    }
+
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      throw new Error("Invalid email or password.");
+    }
+
+    logger.info(`[LOGIN] User logged in: ${email}`);
+
+    return {
+      message: "Login successful",
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    };
+  } finally {
+    client.release();
   }
-
-  const user = result.rows[0];
-  const isMatch = await bcrypt.compare(password, user.password);
-
-  if (!isMatch) {
-    throw new Error("Invalid email or password.");
-  }
-
-  logger.info(`[LOGIN] User logged in: ${email}`);
-  return "Login successful";
 };
