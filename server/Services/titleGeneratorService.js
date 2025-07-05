@@ -1,4 +1,3 @@
-require('dotenv').config();
 const { OpenAI } = require('openai');
 const logger = require('../Utils/logger');
 

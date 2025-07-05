@@ -1,5 +1,4 @@
 const cors = require('cors');
-require('dotenv').config();
 
 const allowedOrigins = [
   process.env.CLIENT_ADDRESS,
