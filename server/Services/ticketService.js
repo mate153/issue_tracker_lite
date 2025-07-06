@@ -1,7 +1,7 @@
 const { connect } = require('../Database/connect/dbConnect');
 
 // Create ticket
-exports.createTicket = async ({ title, description, status }, userId) => {
+exports.createTicket = async ({ title, description, status, priority, category }, userId) => {
   if (!title?.trim() || !description?.trim() || !status) {
     throw new Error('Title, description and status are required.');
   }
@@ -9,10 +9,10 @@ exports.createTicket = async ({ title, description, status }, userId) => {
   const client = await connect();
   try {
     const result = await client.query(
-      `INSERT INTO tickets (user_id, title, description, status)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, user_id AS "userId", title, description, status, created_at`,
-      [userId, title.trim(), description.trim(), status]
+      `INSERT INTO tickets (user_id, title, description, status, priority, category)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, user_id AS "userId", title, description, status, priority, category, created_at`,
+      [userId, title.trim(), description.trim(), status, priority, category]
     );
     return result.rows[0];
   } finally {
@@ -21,7 +21,7 @@ exports.createTicket = async ({ title, description, status }, userId) => {
 };
 
 // Get ticket
-exports.getTicketsByUser = async userId => {
+exports.getAllTickets = async () => {
   const client = await connect();
   try {
     const result = await client.query(
@@ -29,11 +29,15 @@ exports.getTicketsByUser = async userId => {
       SELECT
         t.id,
         t.title,
+        t.user_id AS creator_id,
+        uc.name AS creator_name,
+        uc.email AS creator_email,
         t.description,
         t.status,
+        t.priority,
+        t.category,
         t.created_at,
         t.updated_at,
-        -- minden kommentet JSON tömbbé aggregálunk
         COALESCE(
           json_agg(
             json_build_object(
@@ -41,29 +45,37 @@ exports.getTicketsByUser = async userId => {
               'comment', c.comment,
               'created_at', c.created_at,
               'user', json_build_object(
-                'id', u.id,
-                'name', u.name,
-                'email', u.email
+                'id', cu.id,
+                'name', cu.name,
+                'email', cu.email
               )
             )
           ) FILTER (WHERE c.id IS NOT NULL),
           '[]'
         ) AS comments
       FROM tickets t
+      LEFT JOIN users uc  ON uc.id = t.user_id
       LEFT JOIN ticket_comments c ON c.ticket_id = t.id
-      LEFT JOIN users u ON u.id = c.user_id
-      WHERE t.user_id = $1
-      GROUP BY t.id
+      LEFT JOIN users cu ON cu.id = c.user_id
+      GROUP BY
+        t.id,
+        uc.id
       ORDER BY t.created_at DESC
-      `,
-      [userId]
+      `
     );
 
     return result.rows.map(row => ({
       id: row.id,
       title: row.title,
+      creator: {
+        id: row.creator_id,
+        name: row.creator_name,
+        email: row.creator_email
+      },
       description: row.description,
       status: row.status,
+      priority: row.priority,
+      category: row.category,
       created_at: row.created_at,
       updated_at: row.updated_at,
       comments: row.comments
@@ -101,30 +113,49 @@ exports.deleteTicket = async (ticketId, userId) => {
 exports.editTicket = async (ticketId, userId, fields) => {
   const client = await connect();
   try {
-    const { rows } = await client.query(
+    const { rows: checkRows } = await client.query(
       `SELECT user_id FROM tickets WHERE id = $1`,
       [ticketId]
     );
-    if (rows.length === 0) {
+    if (checkRows.length === 0) {
       const err = new Error('Ticket not found.');
       err.statusCode = 404;
       throw err;
     }
-    if (rows[0].user_id !== userId) {
+    if (checkRows[0].user_id !== userId) {
       const err = new Error('Not authorized to edit this ticket.');
       err.statusCode = 403;
       throw err;
     }
 
     const result = await client.query(
-      `UPDATE tickets
+      `
+      UPDATE tickets
          SET title = $1,
              description = $2,
              status = $3,
+             priority = $4,
+             category = $5,
              updated_at = NOW()
-       WHERE id = $4
-       RETURNING id, title, description, status, created_at, updated_at`,
-      [fields.title, fields.description, fields.status, ticketId]
+       WHERE id = $6
+       RETURNING
+         id,
+         title,
+         description,
+         status,
+         priority,
+         category,
+         created_at,
+         updated_at
+      `,
+      [
+        fields.title,
+        fields.description,
+        fields.status,
+        fields.priority,
+        fields.category,
+        ticketId
+      ]
     );
 
     return result.rows[0];
