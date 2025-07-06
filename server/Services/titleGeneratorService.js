@@ -25,7 +25,7 @@ exports.generateTitle = async (description) => {
             }
         ],
         temperature: 0.2,
-        max_tokens: 16
+        max_tokens: 10
     });
 
     return completion.choices[0].message.content.trim();
