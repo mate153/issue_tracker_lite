@@ -9,8 +9,12 @@ function AddTicket() {
         title: "",
         description: "",
         status: "Open",
+        priority: "",
+        category: ""
     });
     const statuses = ["Open", "In Progress", "Resolved", "Closed"];
+    const priorities = ["Low", "Medium", "High"];
+    const categories = ["Bug", "Feature", "Task"];
     const [isGenerating, setIsGenerating] = useState(false);
 
     const handleChange = e => {
@@ -31,7 +35,7 @@ function AddTicket() {
         }
 
         try {
-            const res = await fetch("/api/tickets/add-ticket", {
+            const res = await fetch("/api/tickets/add_ticket", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ...form, userId }),
@@ -44,7 +48,7 @@ function AddTicket() {
                     title: "Ticket created!",
                     text: data.message || "Your ticket has been added."
                 });
-                setForm({ title: "", description: "", status: "Open" });
+                setForm({ title: "", description: "", status: "Open", priority: "", category: ""});
             } else {
                 Swal.fire({
                     icon: "error",
@@ -144,6 +148,36 @@ function AddTicket() {
                     >
                         {statuses.map( status => (
                             <option key={status} value={status} >{status}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block mb-1 font-medium">Priority</label>
+                    <select
+                        name="priority"
+                        value={form.priority}
+                        onChange={handleChange}
+                        className="w-full p-2 border rounded"
+                    >
+                        <option value="">-- select priority --</option>
+                        {priorities.map(p => (
+                            <option key={p} value={p}>{p}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
+                    <label className="block mb-1 font-medium">Category</label>
+                    <select
+                        name="category"
+                        value={form.category}
+                        onChange={handleChange}
+                        className="w-full p-2 border rounded"
+                    >
+                        <option value="">-- select category --</option>
+                        {categories.map(c => (
+                            <option key={c} value={c}>{c}</option>
                         ))}
                     </select>
                 </div>
