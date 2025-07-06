@@ -30,7 +30,6 @@ function Register() {
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        // Check valid email
         if (!emailRegex.test(formData.email)) {
             setErrors(prev => ({ ...prev, email: true }));
             Swal.fire({
@@ -41,7 +40,6 @@ function Register() {
             return;
         }
 
-        // Errors
         const newErrors = {
             name: formData.name.trim() === "",
             email: formData.email.trim() === "",
@@ -51,7 +49,6 @@ function Register() {
 
         setErrors(newErrors);
 
-        // Missing fields
         if (Object.values(newErrors).some(Boolean)) {
             Swal.fire({
                 icon: "warning",
@@ -61,7 +58,6 @@ function Register() {
             return;
         }
 
-        // Check password matching
         if (formData.password !== formData.confirmPassword) {
             setErrors(prev => ({
                 ...prev,
