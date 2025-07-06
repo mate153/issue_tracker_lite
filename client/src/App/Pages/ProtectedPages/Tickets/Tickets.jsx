@@ -48,9 +48,7 @@ function Tickets() {
         });
       }
 
-      const data = await res.json();
-      console.log(data);
-      
+      const data = await res.json();      
       setTickets(data);
     } catch (err) {
       console.error(err);
