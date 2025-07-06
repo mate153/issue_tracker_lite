@@ -12,14 +12,14 @@ router.post('/add_ticket', async (req, res) => {
         }
 
         const userId = req.body.userId;
-        const { title, description, status } = req.body;
+        const { title, description, status, priority, category } = req.body;
 
         if (!title || typeof title !== 'string') {
             return res.status(400).json({ error: 'Bad Request: title is required' });
         }
 
         const ticket = await ticketService.createTicket(
-            { title, description, status },
+            { title, description, status, priority, category },
             userId
         );
         logger.info(`[TICKET] Created ticket #${ticket.id} for user ${userId}`);
@@ -40,7 +40,7 @@ router.post('/get_tickets', async (req, res) => {
         }
 
         const userId = req.body.userId;
-        const tickets = await ticketService.getTicketsByUser(userId);
+        const tickets = await ticketService.getAllTickets();
         return res.status(200).json(tickets);
 
     } catch (err) {
@@ -83,7 +83,7 @@ router.put('/edit_ticket', async (req, res) => {
         }
         const userId = req.body.userId;
 
-        const { id, title, description, status } = req.body;
+        const { id, title, description, status, priority, category } = req.body;
         if (!id) {
             return res.status(400).json({ error: 'Bad Request: ticket id is required.' });
         }
@@ -103,7 +103,10 @@ router.put('/edit_ticket', async (req, res) => {
             {
                 title: title.trim(),
                 description: description.trim(),
-                status
+                status,
+                priority: priority || null,
+                category: category || null
+
             }
         );
 
