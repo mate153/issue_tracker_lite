@@ -5,7 +5,7 @@ function Welcome() {
                 Welcome to the Issue Tracker Lite
             </h1>
             <p className="mb-6">
-                Track and update your tickets, add comments, and AI even suggests titles for you.
+                Track and update tickets, add comments, and AI even suggests titles for you.
             </p>
         </div>
     );
