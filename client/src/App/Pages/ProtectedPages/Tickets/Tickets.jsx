@@ -6,6 +6,21 @@ import { useAuth } from "@/Hooks/useAuth";
 function Tickets() {
   const { userId } = useAuth();
   const [tickets, setTickets] = useState([]);
+  const statuses = ["Open", "In Progress", "Resolved", "Closed"];
+  const priorities = ["Low", "Medium", "High"];
+  const categories = ["Bug", "Feature", "Task"];
+  const statusColors = {
+    "Open": 'bg-blue-100 text-blue-800',
+    "In Progress": 'bg-yellow-100 text-yellow-800',
+    "Resolved": 'bg-green-100 text-green-800',
+    "Closed": 'bg-gray-100 text-gray-800'
+  };
+
+  const priorityColors = {
+    "Low": 'bg-green-100 text-green-800',
+    "Medium": 'bg-yellow-100 text-yellow-800',
+    "High": 'bg-red-100 text-red-800'
+  };
 
   useEffect(() => {
     fetchTickets();    
@@ -34,6 +49,8 @@ function Tickets() {
       }
 
       const data = await res.json();
+      console.log(data);
+      
       setTickets(data);
     } catch (err) {
       console.error(err);
@@ -50,28 +67,45 @@ function Tickets() {
     const comments = ticket.comments || [];
 
     Swal.fire({
-      title: `<strong>Ticket #${ticket.id}</strong>`,
+      title: `<strong>Ticket details</strong><br/><br/>`,
       html:
-        `<p><strong>Title:</strong> ${ticket.title}</p>` +
-        `<p><strong>Description:</strong><br/>${ticket.description.replace(/\n/g, "<br/>")}</p>` +
-        `<p><strong>Status:</strong> ${ticket.status}</p>` +
-        `<p><strong>Created At:</strong> ${new Date(ticket.created_at).toLocaleString()}</p>` +
+        `<div style="display:flex; justify-content:space-between; margin-bottom:0.5em;">` +
+          `<strong>Title:</strong><span>${ticket.title}</span>` +
+        `</div>` +
+        `<div style="display:flex; justify-content:space-between; margin-bottom:0.5em;">` +
+          `<strong>Status:</strong><span>${ticket.status}</span>` +
+        `</div>` +
+        `<div style="display:flex; justify-content:space-between; margin-bottom:0.5em;">` +
+          `<strong>Priority:</strong><span>${ticket.priority || '—'}</span>` +
+        `</div>` +
+        `<div style="display:flex; justify-content:space-between; margin-bottom:0.5em;">` +
+          `<strong>Category:</strong><span>${ticket.category || '—'}</span>` +
+        `</div>` +
+        `<div style="display:flex; justify-content:space-between; margin-bottom:0.5em;">` +
+          `<strong>Created At:</strong><span>${new Date(ticket.created_at).toLocaleString()}</span>` +
+        `</div>` +
+        `<div style="display:flex; justify-content:space-between; margin-bottom:0.5em;">` +
+          `<strong>Created By:</strong><span>${ticket.creator.name} (${ticket.creator.email})</span>` +
+        `</div>` +
+        `<br/>` +
+        `<div style="text-align:center; margin-bottom:1em;">` +
+          `<strong>Description:</strong><br/><br/>${ticket.description.replace(/\n/g, "<br/>")}` +
+        `</div>` +
+        `<br/>` +
         `<hr/>` +
-        `<h4 class="swal2-title">Comments</h4>` +
+        `<br/>` +
+        `<h4 class="swal2-title"><strong>Comments</strong></h4><br/>` +
         (comments.length
           ? `<ul style="text-align:left; max-height:200px; overflow:auto;">` +
-            comments
-              .map(
-                c => `<li>
-                        <strong>${c.user.name}</strong> 
-                        <em>${new Date(c.created_at).toLocaleString()}:</em><br/>
-                        ${c.comment.replace(/\n/g, "<br/>")}
-                      </li>`
-              )
-              .join("") +
+              comments.map( c =>
+                `<li>
+                  <em>${new Date(c.created_at).toLocaleString()}</em><br/>
+                  <strong>${c.user.name}:</strong><br/>
+                  ${c.comment.replace(/\n/g, "<br/>")}
+                </li><br/>`
+              ).join("") +
             `</ul>`
           : `<p>No comments yet.</p>`),
-      icon: "info",
       width: 600,
       confirmButtonText: "Close"
     });
@@ -167,17 +201,24 @@ function Tickets() {
         `<input id="swal-title" class="swal2-input" placeholder="Title" value="${ticket.title}">` +
         `<textarea id="swal-desc" class="swal2-textarea" placeholder="Description">${ticket.description}</textarea>` +
         `<select id="swal-status" class="swal2-select">
-           <option ${ticket.status==="Open"?"selected":""}>Open</option>
-           <option ${ticket.status==="In Progress"?"selected":""}>In Progress</option>
-           <option ${ticket.status==="Resolved"?"selected":""}>Resolved</option>
-           <option ${ticket.status==="Closed"?"selected":""}>Closed</option>
-         </select>`,
+           ${statuses.map(s => `<option value="${s}" ${ticket.status === s ? "selected" : ""}>${s}</option>`).join("")}
+        </select>` +
+        `<select id="swal-priority" class="swal2-select">
+          <option value="">-- select priority --</option>
+          ${priorities.map(p => `<option ${ticket.priority===p?"selected":""}>${p}</option>`).join("")}
+        </select>` +
+        `<select id="swal-category" class="swal2-select">
+          <option value="">-- select category --</option>
+          ${categories.map(c => `<option ${ticket.category===c?"selected":""}>${c}</option>`).join("")}
+        </select>`,
       focusConfirm: false,
       showCancelButton: true,
       preConfirm: () => ({
-        title: document.getElementById("swal-title").value,
+        title:       document.getElementById("swal-title").value,
         description: document.getElementById("swal-desc").value,
-        status: document.getElementById("swal-status").value
+        status:      document.getElementById("swal-status").value,
+        priority:    document.getElementById("swal-priority").value,
+        category:    document.getElementById("swal-category").value,
       })
     });
 
@@ -187,30 +228,48 @@ function Tickets() {
       const res = await fetch("/api/tickets/edit_ticket", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: userId, id: ticket.id, ...formValues }),
+        body: JSON.stringify({ 
+          userId: userId, 
+          id: ticket.id, 
+          ...formValues 
+        }),
       });
 
       if (res.ok) {
-        Swal.fire({ icon: "success", title: "Updated!", timer: 1200, showConfirmButton: false });
+        Swal.fire({
+          icon: "success",
+          title: "Updated!",
+          timer: 1200,
+          showConfirmButton: false
+        });
         fetchTickets();
       } else {
         const { error } = await res.json();
-        Swal.fire({ icon: "error", title: "Error", text: error || "Could not update." });
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error || "Could not update."
+        });
       }
     } catch (err) {
       console.error(err);
-      Swal.fire({ icon: "error", title: "Error", text: "Please try again later." });
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Please try again later."
+      });
     }
   };
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-4">My Tickets</h2>
+      <h2 className="text-2xl font-semibold mb-4">Tickets</h2>
       <table className="w-full table-auto bg-white shadow rounded">
         <thead>
           <tr className="bg-gray-100">
             <th className="px-4 py-2 text-center">#</th>
             <th className="px-4 py-2 text-center">Title</th>
+            <th className="px-4 py-2 text-center">Priority</th>
             <th className="px-4 py-2 text-center">Status</th>
             <th className="px-4 py-2 text-center">Created At</th>
             <th className="px-4 py-2 text-center">Actions</th>
@@ -228,7 +287,12 @@ function Tickets() {
               <tr key={t.id} className="border-t">
                 <td className="px-4 py-2 text-center">{i + 1}</td>
                 <td className="px-4 py-2 text-center">{t.title}</td>
-                <td className="px-4 py-2 text-center">{t.status}</td>
+                <td className={`px-4 py-2 text-center text-sm ${priorityColors[t.priority] || 'bg-gray-100 text-gray-800'}`} >
+                  {t.priority}
+                </td>
+                <td className={`px-4 py-2 text-center text-sm ${statusColors[t.status] || 'bg-gray-100 text-gray-800'}`} >
+                  {t.status}
+                </td>
                 <td className="px-4 py-2 text-center">
                   {new Date(t.created_at).toLocaleString()}
                 </td>
