@@ -1,8 +1,7 @@
 const cors = require('cors');
 
 const allowedOrigins = [
-  process.env.CLIENT_ADDRESS,
-  process.env.ADMIN_CLIENT_ADDRESS
+  process.env.CLIENT_ADDRESS
 ];
 
 const corsMiddleware = cors({
