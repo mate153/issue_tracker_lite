@@ -20,7 +20,7 @@ function Sidebar({ setIsLoggedIn }) {
                     Add Ticket
                 </NavLink>
                 <NavLink to="/home/tickets" className={linkClass}>
-                    My Tickets
+                    Tickets
                 </NavLink>
             </nav>
             <button
